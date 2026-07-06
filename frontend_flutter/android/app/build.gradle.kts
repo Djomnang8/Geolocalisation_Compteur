@@ -21,8 +21,8 @@ android {
 
     defaultConfig {
         applicationId = "com.socadel.frontend_flutter"
-        // minSdk 23 requis par les greffons google_maps_flutter / geolocator
-        minSdk = 23
+        // minSdk 24 requis par le greffon google_maps_flutter_android
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

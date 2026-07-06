@@ -107,18 +107,15 @@ class _LoginPageState extends State<LoginPage> {
                               errorBuilder: (_, __, ___) => const Icon(Icons.bolt,
                                   size: 56, color: AppColors.primaire)),
                         ),
-                        const SizedBox(height: 18),
-                        Text('SOCADEL Géoloc',
-                            style: GoogleFonts.ibmPlexSans(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 20),
                         Text(
                           'Géolocalisation des compteurs électriques — Douala, agence de Koumassi',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.ibmPlexSans(
-                              color: const Color(0xFFB9C6E6), fontSize: 12.5, height: 1.5),
+                              color: Colors.white,
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.w600,
+                              height: 1.45),
                         ),
                       ],
                     ),

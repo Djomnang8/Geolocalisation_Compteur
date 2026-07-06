@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'core/app_colors.dart';
-import 'pages/login_page.dart';
+import 'pages/splash_page.dart';
 
 /// SOCADEL Geoloc — Application mobile de geolocalisation des compteurs
 /// electriques de SOCADEL dans la ville de Douala (agence de Koumassi).
@@ -34,12 +34,13 @@ class SocadelGeolocApp extends StatelessWidget {
       ),
     );
     return MaterialApp(
-      title: 'SOCADEL Géoloc',
+      title: 'GCES',
       debugShowCheckedModeBanner: false,
       theme: base.copyWith(
         textTheme: GoogleFonts.ibmPlexSansTextTheme(base.textTheme),
       ),
-      home: const LoginPage(),
+      // Écran de démarrage (splash) puis page de connexion
+      home: const SplashPage(),
     );
   }
 }
