@@ -22,22 +22,27 @@ dependencies:
   google_fonts: ^6.2.1
   intl: ^0.19.0
   cupertino_icons: ^1.0.8
+  # Photo de l'inspection (camera / galerie)
+  image_picker: ^1.1.2
+  # Fichier joint au rapport (PDF, DOCX, TXT...)
+  file_picker: ^8.1.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  # Generation de l'icone de l'application a partir du logo de l'entreprise
+  # Generation de l'icone de l'application (icone thematique GCES)
   flutter_launcher_icons: ^0.14.1
 
-# Icone de l'application (le nom affiche sous l'icone, GCES, vient du
-# android:label du fichier AndroidManifest.xml)
+# Icone de l'application : pictogramme thematique (marqueur de geolocalisation
+# + eclair) et non le logo de l'entreprise. Le nom affiche sous l'icone, GCES,
+# vient du android:label du fichier AndroidManifest.xml.
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/logo.jpeg"
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/logo.jpeg"
+  image_path: "assets/icone_app.png"
+  adaptive_icon_background: "#15357A"
+  adaptive_icon_foreground: "assets/icone_app_adaptive.png"
 
 flutter:
   uses-material-design: true

@@ -49,8 +49,12 @@ class _AdminShellState extends State<AdminShell> {
       backgroundColor: AppColors.fond,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      // Feuille defilante : evite tout debordement sur les petits ecrans
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.84),
       builder: (contexteFeuille) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,

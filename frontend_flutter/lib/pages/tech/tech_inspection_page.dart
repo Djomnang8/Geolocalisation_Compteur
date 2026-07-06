@@ -1,6 +1,8 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/app_colors.dart';
@@ -28,9 +30,92 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
   final _etatAutre = TextEditingController();
   final _anomalies = TextEditingController();
   final _observations = TextEditingController();
-  bool _photoJointe = false;
-  bool _fichierJoint = false;
+  XFile? _photo; // photo prise ou choisie (preuve de visite)
+  String? _fichierNom; // nom du fichier joint (PDF, DOCX, TXT...)
   bool _envoiEnCours = false;
+
+  /// Prise de photo : l'utilisateur choisit Caméra ou Galerie.
+  Future<void> _joindrePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.fond,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (contexteFeuille) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined,
+                  color: AppColors.primaire),
+              title: Text('Prendre une photo',
+                  style: GoogleFonts.ibmPlexSans(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
+              onTap: () =>
+                  Navigator.of(contexteFeuille).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined,
+                  color: AppColors.primaire),
+              title: Text('Choisir dans la galerie',
+                  style: GoogleFonts.ibmPlexSans(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
+              onTap: () =>
+                  Navigator.of(contexteFeuille).pop(ImageSource.gallery),
+            ),
+            if (_photo != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline,
+                    color: AppColors.rougeSombre),
+                title: Text('Retirer la photo',
+                    style: GoogleFonts.ibmPlexSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.rougeSombre)),
+                onTap: () {
+                  Navigator.of(contexteFeuille).pop();
+                  setState(() => _photo = null);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    try {
+      final image = await ImagePicker()
+          .pickImage(source: source, maxWidth: 1600, imageQuality: 82);
+      if (image != null && mounted) {
+        setState(() => _photo = image);
+        afficherToast(context, 'Photo jointe au rapport');
+      }
+    } catch (e) {
+      if (mounted) {
+        afficherErreur(context,
+            "Impossible d'accéder à l'appareil photo / la galerie.");
+      }
+    }
+  }
+
+  /// Choix d'un fichier a joindre (PDF, DOCX, TXT, image...).
+  Future<void> _joindreFichier() async {
+    try {
+      final resultat = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png'],
+      );
+      if (resultat != null && resultat.files.isNotEmpty && mounted) {
+        setState(() => _fichierNom = resultat.files.single.name);
+        afficherToast(context, 'Fichier joint : $_fichierNom');
+      }
+    } catch (e) {
+      if (mounted) {
+        afficherErreur(context, 'Impossible de sélectionner le fichier.');
+      }
+    }
+  }
 
   late final String _date =
       DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
@@ -91,8 +176,8 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
         'etatAutre': _etat == 'AUTRE' ? _etatAutre.text.trim() : null,
         'anomalies': anomalies,
         'observations': _observations.text.trim(),
-        'photo': _photoJointe,
-        'fichier': _fichierJoint ? 'preuve_visite.pdf' : null,
+        'photo': _photo != null,
+        'fichier': _fichierNom,
         'latitude': latitude,
         'longitude': longitude,
       });
@@ -235,18 +320,25 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
             Expanded(
               child: _BoutonPieceJointe(
                 icone: Icons.attach_file,
-                label: _fichierJoint ? 'Fichier joint' : 'Joindre un fichier',
-                actif: _fichierJoint,
-                onTap: () => setState(() => _fichierJoint = !_fichierJoint),
+                label: _fichierNom == null ? 'Joindre un fichier' : 'Fichier joint',
+                detail: _fichierNom,
+                actif: _fichierNom != null,
+                onTap: _joindreFichier,
+                onSupprimer: _fichierNom == null
+                    ? null
+                    : () => setState(() => _fichierNom = null),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _BoutonPieceJointe(
                 icone: Icons.photo_camera_outlined,
-                label: _photoJointe ? 'Photo jointe' : 'Joindre une photo',
-                actif: _photoJointe,
-                onTap: () => setState(() => _photoJointe = !_photoJointe),
+                label: _photo == null ? 'Joindre une photo' : 'Photo jointe',
+                detail: _photo?.name,
+                actif: _photo != null,
+                onTap: _joindrePhoto,
+                onSupprimer:
+                    _photo == null ? null : () => setState(() => _photo = null),
               ),
             ),
           ]),
@@ -333,17 +425,23 @@ class _OptionEtat extends StatelessWidget {
   }
 }
 
+/// Bouton de piece jointe : ouvre le selecteur au tap ; quand une piece est
+/// jointe, affiche son nom et un appui long permet de la retirer.
 class _BoutonPieceJointe extends StatelessWidget {
   final IconData icone;
   final String label;
+  final String? detail;
   final bool actif;
   final VoidCallback onTap;
+  final VoidCallback? onSupprimer;
 
   const _BoutonPieceJointe({
     required this.icone,
     required this.label,
+    this.detail,
     required this.actif,
     required this.onTap,
+    this.onSupprimer,
   });
 
   @override
@@ -352,6 +450,7 @@ class _BoutonPieceJointe extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
+      onLongPress: onSupprimer,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
         decoration: BoxDecoration(
@@ -361,7 +460,8 @@ class _BoutonPieceJointe extends StatelessWidget {
               color: actif ? AppColors.vert : AppColors.bordureInput, width: 1.5),
         ),
         child: Column(children: [
-          Icon(icone, size: 22, color: couleur),
+          Icon(actif ? Icons.check_circle_outline : icone,
+              size: 22, color: couleur),
           const SizedBox(height: 7),
           Text(label,
               textAlign: TextAlign.center,
@@ -369,6 +469,18 @@ class _BoutonPieceJointe extends StatelessWidget {
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                   color: AppColors.texte)),
+          if (detail != null) ...[
+            const SizedBox(height: 3),
+            Text(detail!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.ibmPlexMono(
+                    fontSize: 9.5, color: AppColors.texteLeger)),
+            Text('Appui long pour retirer',
+                style: GoogleFonts.ibmPlexSans(
+                    fontSize: 9, color: AppColors.texteLeger)),
+          ],
         ]),
       ),
     );
