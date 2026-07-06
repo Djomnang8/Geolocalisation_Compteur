@@ -1,0 +1,34 @@
+name: frontend_flutter
+description: >-
+  SOCADEL Geoloc - Application mobile de geolocalisation des compteurs
+  electriques de SOCADEL dans la ville de Douala (agence de Koumassi).
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Appels HTTP vers l'API Frontend (BFF, port 8080)
+  http: ^1.2.2
+  # Cartographie imposee par le cahier des charges : Google Maps uniquement
+  google_maps_flutter: ^2.9.0
+  # Capture de la position GPS lors de la visite d'un compteur
+  geolocator: ^13.0.1
+  # Polices IBM Plex Sans / IBM Plex Mono (identiques a la maquette)
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

@@ -1,0 +1,5 @@
+Placez ici le logo de l'entreprise sous le nom  logo.jpeg
+(copiez le fichier  C:\Users\joyce\Documents\B3\Rapport_Stage\logo.jpeg  dans ce dossier).
+
+Si le fichier est absent, l'application affiche automatiquement un logo de
+remplacement (icone eclair) : rien ne casse.
