@@ -5,13 +5,18 @@
 -- Importation :
 --   1. Demarrer MySQL depuis le panneau de controle XAMPP
 --   2. Ouvrir http://localhost/phpmyadmin  ->  onglet "Importer"  ->  ce fichier
---      (ou en ligne de commande :  c:\xampp\mysql\bin\mysql.exe -u root < socadel_geoloc.sql)
+--      (ou en ligne de commande, IMPORTANT le flag --default-character-set
+--       est obligatoire sinon les accents (é, è, ô...) sont corrompus a
+--       l'import sur Windows :
+--       c:\xampp\mysql\bin\mysql.exe --default-character-set=utf8mb4 -u root < socadel_geoloc.sql)
 --
 -- Mot de passe des comptes de demonstration : 1234
 -- (stocke sous forme de hachage SHA-256, conformement au cahier des charges)
 -- Comptes : Jean MBALLA / TECH-2043  (technicien)
 --           Alice NGONO / ADM-1007   (administrateur)
 -- ============================================================================
+
+SET NAMES utf8mb4;
 
 DROP DATABASE IF EXISTS socadel_geoloc;
 CREATE DATABASE socadel_geoloc CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
