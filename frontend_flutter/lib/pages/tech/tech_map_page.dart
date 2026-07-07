@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 import '../../core/app_colors.dart';
 import '../../core/session.dart';
 import '../../models/compteur.dart';
 import '../../services/compteur_service.dart';
+import '../../widgets/carte_osm.dart';
 import '../../widgets/soc_widgets.dart';
 import '../../widgets/statut.dart';
 import 'tech_meter_page.dart';
 
 /// Carte des compteurs attribués au technicien (maquette "TECH MAP") :
-/// recherche par n° ou adresse, filtres par statut, carte Google Maps avec
+/// recherche par n° ou adresse, filtres par statut, carte OpenStreetMap avec
 /// marqueurs colorés + légende, puis liste des compteurs affichés.
 /// Diagrammes de séquence : "Consultation des compteurs sur la carte",
 /// "Recherche d'un compteur par numéro".
@@ -29,10 +30,8 @@ class _TechMapPageState extends State<TechMapPage> {
   bool _chargement = true;
   String? _erreur;
 
-  static const CameraPosition _douala = CameraPosition(
-    target: LatLng(4.0483, 9.7261), // Douala, agence de Koumassi
-    zoom: 13.2,
-  );
+  static const _centreDouala = ll.LatLng(4.0483, 9.7261); // Douala, agence de Koumassi
+  static const _zoomInitial = 13.2;
 
   @override
   void initState() {
@@ -116,28 +115,15 @@ class _TechMapPageState extends State<TechMapPage> {
             ),
           ]),
         ),
-        // Carte Google Maps + legende
+        // Carte OpenStreetMap + legende
         SizedBox(
           height: 300,
           child: Stack(children: [
-            GoogleMap(
-              initialCameraPosition: _douala,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              markers: {
-                for (final c in affiches)
-                  Marker(
-                    markerId: MarkerId('cpt-${c.id}'),
-                    position: LatLng(c.latitude, c.longitude),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                        StatutMeta.de(c.statut).teinteMarqueur),
-                    infoWindow: InfoWindow(
-                      title: c.reference,
-                      snippet: StatutMeta.libelleComplet(c.statut, c.statutAutre),
-                      onTap: () => _ouvrir(c),
-                    ),
-                  ),
-              },
+            CarteCompteursOSM(
+              compteurs: affiches,
+              centre: _centreDouala,
+              zoom: _zoomInitial,
+              onTapCompteur: _ouvrir,
             ),
             Positioned(left: 10, bottom: 10, child: _Legende()),
           ]),

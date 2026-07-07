@@ -14,8 +14,9 @@ dependencies:
 
   # Appels HTTP vers l'API Frontend (BFF, port 8080)
   http: ^1.2.2
-  # Cartographie imposee par le cahier des charges : Google Maps uniquement
-  google_maps_flutter: ^2.9.0
+  # Cartographie OpenStreetMap (gratuite, sans cle API)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   # Capture de la position GPS lors de la visite d'un compteur
   geolocator: ^13.0.1
   # Polices IBM Plex Sans / IBM Plex Mono (identiques a la maquette)

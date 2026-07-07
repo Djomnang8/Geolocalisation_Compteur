@@ -9,7 +9,7 @@ Application Flutter reproduisant fidèlement la maquette UX/UI
   comptes de démonstration).
 - **Espace technicien (4/8)** :
   1. Tableau de bord (KPI personnels, "Itinéraire du jour", "Mes compteurs")
-  2. Carte des compteurs attribués (Google Maps, recherche, filtres par statut, légende)
+  2. Carte des compteurs attribués (OpenStreetMap, recherche, filtres par statut, légende)
   3. Détail compteur (fiche + historique des interventions en feuille)
   4. Formulaire d'inspection (état, anomalies, observations, pièces jointes,
      capture GPS automatique, envoi du rapport)
@@ -36,8 +36,8 @@ flutter run
 Configuration :
 - `lib/core/api_config.dart` : adresse de l'API Frontend
   (émulateur : `http://10.0.2.2:8080/api` ; téléphone : IP du PC).
-- `android/app/src/main/AndroidManifest.xml` : clé Google Maps
-  (`com.google.android.geo.API_KEY`).
+- Cartographie : OpenStreetMap (`flutter_map`), gratuite et sans clé API,
+  aucune configuration nécessaire.
 - `assets/logo.jpeg` : copier le logo de l'entreprise (sinon une icône de
   remplacement est affichée).
 

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 import '../../core/app_colors.dart';
 import '../../models/compteur.dart';
 import '../../services/compteur_service.dart';
+import '../../widgets/carte_osm.dart';
 import '../../widgets/soc_widgets.dart';
 import '../../widgets/statut.dart';
 import 'admin_meter_form_page.dart';
 
 /// Carte globale de Douala pour l'administrateur (maquette "ADMIN MAP") :
 /// tous les compteurs de la ville, recherche, filtres par statut, carte
-/// Google Maps + legende, liste en dessous. Un appui sur un compteur ouvre
+/// OpenStreetMap + legende, liste en dessous. Un appui sur un compteur ouvre
 /// sa fiche (info + bouton "Modifier la fiche").
 class AdminMapPage extends StatefulWidget {
   const AdminMapPage({super.key});
@@ -27,10 +28,8 @@ class _AdminMapPageState extends State<AdminMapPage> {
   bool _chargement = true;
   String? _erreur;
 
-  static const CameraPosition _douala = CameraPosition(
-    target: LatLng(4.0483, 9.7261),
-    zoom: 12.6,
-  );
+  static const _centreDouala = ll.LatLng(4.0483, 9.7261);
+  static const _zoomInitial = 12.6;
 
   @override
   void initState() {
@@ -199,24 +198,11 @@ class _AdminMapPageState extends State<AdminMapPage> {
         SizedBox(
           height: 320,
           child: Stack(children: [
-            GoogleMap(
-              initialCameraPosition: _douala,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              markers: {
-                for (final c in affiches)
-                  Marker(
-                    markerId: MarkerId('cpt-${c.id}'),
-                    position: LatLng(c.latitude, c.longitude),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                        StatutMeta.de(c.statut).teinteMarqueur),
-                    infoWindow: InfoWindow(
-                      title: c.reference,
-                      snippet: StatutMeta.libelleComplet(c.statut, c.statutAutre),
-                      onTap: () => _ouvrirFiche(c),
-                    ),
-                  ),
-              },
+            CarteCompteursOSM(
+              compteurs: affiches,
+              centre: _centreDouala,
+              zoom: _zoomInitial,
+              onTapCompteur: _ouvrirFiche,
             ),
             Positioned(left: 10, bottom: 10, child: _LegendeAdmin()),
           ]),

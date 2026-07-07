@@ -22,8 +22,8 @@ import com.socadel.gateway.security.JetonVerifier;
 /**
  * Exemple du role "mise en forme" du BFF : ce point d'entree transforme la
  * liste des compteurs fournie par l'API Backend au format GeoJSON attendu
- * par les bibliotheques cartographiques (Google Maps), sans exposer la
- * structure interne du systeme.
+ * par les bibliotheques cartographiques (OpenStreetMap / flutter_map), sans
+ * exposer la structure interne du systeme.
  */
 @RestController
 public class CarteController {

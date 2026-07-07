@@ -11,13 +11,6 @@
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
 
-        <!-- Cle API Google Maps (cartographie imposee par le cahier des charges).
-             Creez une cle sur https://console.cloud.google.com (Maps SDK for Android)
-             puis remplacez la valeur ci-dessous. -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="VOTRE_CLE_API_GOOGLE_MAPS"/>
-
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -73,8 +73,8 @@ flutter run
 - **Émulateur Android** : l'application appelle `http://10.0.2.2:8080/api` (déjà configuré).
 - **Téléphone physique** : remplacer l'adresse dans `lib/core/api_config.dart`
   par l'IP du PC (ex. `http://192.168.1.20:8080/api`).
-- **Google Maps** : mettre votre clé API dans
-  `android/app/src/main/AndroidManifest.xml` (`com.google.android.geo.API_KEY`).
+- **Cartographie** : OpenStreetMap (`flutter_map`), gratuite et sans clé API,
+  fonctionne directement.
 - **Logo** : copier `logo.jpeg` de l'entreprise dans `frontend_flutter/assets/`.
 
 ## Sécurité : une API ou deux API ? (question du cahier des charges)

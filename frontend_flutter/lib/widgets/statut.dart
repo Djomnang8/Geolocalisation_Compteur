@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../core/app_colors.dart';
 
@@ -10,21 +9,17 @@ class StatutMeta {
   final String libelle;
   final Color couleur;
   final Color fond;
-  final double teinteMarqueur; // teinte du marqueur Google Maps
 
-  const StatutMeta(this.code, this.libelle, this.couleur, this.fond, this.teinteMarqueur);
+  const StatutMeta(this.code, this.libelle, this.couleur, this.fond);
 
   static const Map<String, StatutMeta> _tous = {
-    'NON_INSPECTE': StatutMeta('NON_INSPECTE', 'Non inspecté', AppColors.gris,
-        AppColors.grisFond, BitmapDescriptor.hueViolet),
-    'ACTIF': StatutMeta('ACTIF', 'Actif', AppColors.vert, AppColors.vertFond,
-        BitmapDescriptor.hueGreen),
-    'MAINTENANCE': StatutMeta('MAINTENANCE', 'En maintenance', AppColors.orange,
-        AppColors.orangeFond, BitmapDescriptor.hueOrange),
-    'PANNE': StatutMeta('PANNE', 'En panne', AppColors.rouge, AppColors.rougeFond,
-        BitmapDescriptor.hueRed),
-    'AUTRE': StatutMeta('AUTRE', 'Autre', AppColors.bleuClair, AppColors.bleuFond,
-        BitmapDescriptor.hueAzure),
+    'NON_INSPECTE':
+        StatutMeta('NON_INSPECTE', 'Non inspecté', AppColors.gris, AppColors.grisFond),
+    'ACTIF': StatutMeta('ACTIF', 'Actif', AppColors.vert, AppColors.vertFond),
+    'MAINTENANCE': StatutMeta(
+        'MAINTENANCE', 'En maintenance', AppColors.orange, AppColors.orangeFond),
+    'PANNE': StatutMeta('PANNE', 'En panne', AppColors.rouge, AppColors.rougeFond),
+    'AUTRE': StatutMeta('AUTRE', 'Autre', AppColors.bleuClair, AppColors.bleuFond),
   };
 
   static StatutMeta de(String? code) => _tous[code] ?? _tous['NON_INSPECTE']!;
