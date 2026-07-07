@@ -2,6 +2,8 @@ package com.socadel.backend.controller;
 
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +36,33 @@ public class RapportController {
     public ResponseEntity<?> obtenir(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(rapportService.obtenir(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** Photo de l'inspection (octets JPEG) : consultee par l'administrateur. */
+    @GetMapping("/{id}/photo")
+    public ResponseEntity<?> photo(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(rapportService.photo(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** Fichier joint au rapport (PDF, DOCX...) : ouvert par l'administrateur. */
+    @GetMapping("/{id}/fichier")
+    public ResponseEntity<?> fichier(@PathVariable Long id) {
+        try {
+            Object[] fichier = rapportService.fichier(id);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + fichier[0] + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body((byte[]) fichier[1]);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
         }

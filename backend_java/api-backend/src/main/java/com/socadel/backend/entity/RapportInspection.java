@@ -51,8 +51,18 @@ public class RapportInspection {
     @Column(nullable = false)
     private boolean photo;
 
+    /** Octets de la photo (JPEG), consultables par l'administrateur. */
+    @Lob
+    @Column(name = "photo_donnees", columnDefinition = "LONGBLOB")
+    private byte[] photoDonnees;
+
     @Column(length = 190)
     private String fichier;
+
+    /** Octets du fichier joint (PDF, DOCX...), consultables par l'administrateur. */
+    @Lob
+    @Column(name = "fichier_donnees", columnDefinition = "LONGBLOB")
+    private byte[] fichierDonnees;
 
     /** Position GPS precise capturee lors de la visite. */
     @Column(precision = 10, scale = 6)
@@ -86,8 +96,12 @@ public class RapportInspection {
     public void setObservations(String observations) { this.observations = observations; }
     public boolean isPhoto() { return photo; }
     public void setPhoto(boolean photo) { this.photo = photo; }
+    public byte[] getPhotoDonnees() { return photoDonnees; }
+    public void setPhotoDonnees(byte[] photoDonnees) { this.photoDonnees = photoDonnees; }
     public String getFichier() { return fichier; }
     public void setFichier(String fichier) { this.fichier = fichier; }
+    public byte[] getFichierDonnees() { return fichierDonnees; }
+    public void setFichierDonnees(byte[] fichierDonnees) { this.fichierDonnees = fichierDonnees; }
     public BigDecimal getLatitude() { return latitude; }
     public void setLatitude(BigDecimal latitude) { this.latitude = latitude; }
     public BigDecimal getLongitude() { return longitude; }

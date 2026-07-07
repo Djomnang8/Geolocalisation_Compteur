@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -32,6 +35,7 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
   final _observations = TextEditingController();
   XFile? _photo; // photo prise ou choisie (preuve de visite)
   String? _fichierNom; // nom du fichier joint (PDF, DOCX, TXT...)
+  Uint8List? _fichierOctets; // octets du fichier, envoyes a l'administrateur
   bool _envoiEnCours = false;
 
   /// Prise de photo : l'utilisateur choisit Caméra ou Galerie.
@@ -99,15 +103,29 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
     }
   }
 
-  /// Choix d'un fichier a joindre (PDF, DOCX, TXT, image...).
+  /// Choix d'un fichier a joindre (PDF, DOCX, TXT, image...). Les octets
+  /// sont conserves pour etre envoyes a l'administrateur avec le rapport.
   Future<void> _joindreFichier() async {
     try {
       final resultat = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png'],
+        withData: true,
       );
       if (resultat != null && resultat.files.isNotEmpty && mounted) {
-        setState(() => _fichierNom = resultat.files.single.name);
+        final fichier = resultat.files.single;
+        if (fichier.bytes == null) {
+          afficherErreur(context, 'Impossible de lire le fichier sélectionné.');
+          return;
+        }
+        if (fichier.bytes!.length > 10 * 1024 * 1024) {
+          afficherErreur(context, 'Fichier trop volumineux (10 Mo maximum).');
+          return;
+        }
+        setState(() {
+          _fichierNom = fichier.name;
+          _fichierOctets = fichier.bytes;
+        });
         afficherToast(context, 'Fichier joint : $_fichierNom');
       }
     } catch (e) {
@@ -169,6 +187,9 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
           .map((a) => a.trim())
           .where((a) => a.isNotEmpty)
           .join(';');
+      // Pieces jointes : octets encodes en Base64, consultables ensuite
+      // par l'administrateur depuis la page "Detail du rapport".
+      final photoOctets = _photo == null ? null : await _photo!.readAsBytes();
       await RapportService.instance.envoyer({
         'compteurId': widget.compteur.id,
         'matricule': Session.instance.utilisateur!.matricule,
@@ -178,6 +199,9 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
         'observations': _observations.text.trim(),
         'photo': _photo != null,
         'fichier': _fichierNom,
+        'photoBase64': photoOctets == null ? null : base64Encode(photoOctets),
+        'fichierBase64':
+            _fichierOctets == null ? null : base64Encode(_fichierOctets!),
         'latitude': latitude,
         'longitude': longitude,
       });
@@ -326,7 +350,10 @@ class _TechInspectionPageState extends State<TechInspectionPage> {
                 onTap: _joindreFichier,
                 onSupprimer: _fichierNom == null
                     ? null
-                    : () => setState(() => _fichierNom = null),
+                    : () => setState(() {
+                          _fichierNom = null;
+                          _fichierOctets = null;
+                        }),
               ),
             ),
             const SizedBox(width: 10),

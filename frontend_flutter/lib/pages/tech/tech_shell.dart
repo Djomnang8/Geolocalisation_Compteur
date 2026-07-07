@@ -6,16 +6,18 @@ import '../../core/session.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/soc_widgets.dart';
 import '../login_page.dart';
-import '../placeholder_page.dart';
+import '../profile_page.dart';
 import 'tech_dashboard_page.dart';
 import 'tech_map_page.dart';
+import 'tech_reports_page.dart';
+import 'tech_route_page.dart';
 
 /// Coquille de l'espace TECHNICIEN : barre d'application bleue (titre +
 /// sous-titre + logo) et barre de navigation inferieure a 5 onglets,
 /// identiques a la maquette : Accueil, Carte, Itineraire, Rapports, Profil.
 ///
-/// Pages realisees (moitie de l'espace technicien) : Tableau de bord,
-/// Carte des compteurs, Detail compteur, Formulaire d'inspection.
+/// Pages realisees : Tableau de bord, Carte des compteurs, Detail compteur,
+/// Formulaire d'inspection, Itineraire du jour, Mes rapports, Mon profil.
 class TechShell extends StatefulWidget {
   const TechShell({super.key});
 
@@ -45,9 +47,9 @@ class _TechShellState extends State<TechShell> {
     final pages = [
       TechDashboardPage(ouvrirCarte: () => setState(() => _onglet = 1)),
       const TechMapPage(),
-      const PagePlaceholder(titre: 'Itinéraire du jour'),
-      const PagePlaceholder(titre: 'Mes rapports'),
-      const PagePlaceholder(titre: 'Mon profil'),
+      const TechRoutePage(),
+      const TechReportsPage(),
+      const ProfilePage(),
     ];
     return Scaffold(
       appBar: BarreSocadel(

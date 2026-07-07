@@ -4,22 +4,29 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../login_page.dart';
-import '../placeholder_page.dart';
+import '../profile_page.dart';
 import '../tech/tech_shell.dart' show BarreSocadel;
+import 'admin_attribution_page.dart';
+import 'admin_audit_page.dart';
 import 'admin_dashboard_page.dart';
 import 'admin_map_page.dart';
 import 'admin_meters_page.dart';
 import 'admin_reports_page.dart';
+import 'admin_stats_page.dart';
 import 'admin_techniciens_page.dart';
+import 'admin_tracking_page.dart';
+import 'admin_zones_page.dart';
 
 /// Coquille de l'espace ADMINISTRATEUR : navigation inferieure identique
 /// a la maquette (Tableau, Carte, Compteurs, Rapports, Menu) + feuille
 /// "Menu administrateur" (Techniciens, Attribution, Zones, Statistiques,
 /// Suivi, Journal d'audit, Mon profil, Deconnexion).
 ///
-/// Pages realisees (moitie de l'espace administrateur) : Tableau de bord,
-/// Carte de Douala, Gestion des compteurs, Fiche compteur, Rapports,
-/// Detail du rapport, Techniciens, Fiche technicien.
+/// Pages realisees : Tableau de bord, Carte de Douala, Gestion des
+/// compteurs, Fiche compteur, Rapports (recherche + periode), Detail du
+/// rapport (pieces jointes consultables), Techniciens, Fiche technicien,
+/// Attribution, Zones de service, Statistiques, Suivi des deplacements,
+/// Journal d'audit, Mon profil.
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
 
@@ -91,28 +98,30 @@ class _AdminShellState extends State<AdminShell> {
                       'Attribution',
                       const _PageDetail(
                           titre: 'Attribution des compteurs',
-                          enfant: PagePlaceholder(titre: 'Attribution des compteurs'))),
+                          enfant: AdminAttributionPage())),
                   _itemMenu(contexteFeuille, Icons.layers_outlined, 'Zones de service',
                       const _PageDetail(
                           titre: 'Zones de service',
-                          enfant: PagePlaceholder(titre: 'Zones de service'))),
+                          enfant: AdminZonesPage())),
                   _itemMenu(contexteFeuille, Icons.bar_chart, 'Statistiques',
                       const _PageDetail(
                           titre: 'Statistiques par zone',
-                          enfant: PagePlaceholder(titre: 'Statistiques par zone'))),
+                          enfant: AdminStatsPage())),
                   _itemMenu(contexteFeuille, Icons.schedule, 'Suivi déplacements',
                       const _PageDetail(
                           titre: 'Suivi des déplacements',
-                          enfant: PagePlaceholder(titre: 'Suivi des déplacements'))),
+                          enfant: AdminTrackingPage())),
                   _itemMenu(contexteFeuille, Icons.fact_check_outlined,
                       "Journal d'audit",
                       const _PageDetail(
                           titre: "Journal d'audit",
-                          enfant: PagePlaceholder(titre: "Journal d'audit"))),
+                          enfant: AdminAuditPage())),
                   _itemMenu(contexteFeuille, Icons.person_outline, 'Mon profil',
                       const _PageDetail(
                           titre: 'Mon profil',
-                          enfant: PagePlaceholder(titre: 'Mon profil'))),
+                          enfant: ProfilePage(
+                              couleurAvatar: Color(0xFF7A4FB5),
+                              avecDeconnexion: false))),
                 ],
               ),
               const SizedBox(height: 14),

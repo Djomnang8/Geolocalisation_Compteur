@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'core/app_colors.dart';
@@ -39,6 +40,14 @@ class SocadelGeolocApp extends StatelessWidget {
       theme: base.copyWith(
         textTheme: GoogleFonts.ibmPlexSansTextTheme(base.textTheme),
       ),
+      // Application en francais (calendriers, selecteur de dates...)
+      locale: const Locale('fr'),
+      supportedLocales: const [Locale('fr'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       // Écran de démarrage (splash) puis page de connexion
       home: const SplashPage(),
     );

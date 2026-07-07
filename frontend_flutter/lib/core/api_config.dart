@@ -27,6 +27,7 @@ class ApiConfig {
     '10.20.0.195',   // Wi-Fi actuel (ipconfig du 04/07/2026)
     '192.168.1.100', // exemple : Wi-Fi maison
     '192.168.43.1',  // exemple : partage de connexion telephone
+    '10.20.2.84',
   ];
 
   /// Adresse retenue apres detection (memorisee jusqu'au prochain echec).

@@ -29,4 +29,10 @@ class RapportService {
         'commentaire': commentaire,
         'matriculeAdmin': matriculeAdmin,
       }));
+
+  /// Octets de la photo d'inspection (consultation par l'administrateur).
+  Future<List<int>> photo(int id) => ApiClient.instance.getOctets('/rapports/$id/photo');
+
+  /// Octets du fichier joint au rapport (PDF, DOCX...).
+  Future<List<int>> fichier(int id) => ApiClient.instance.getOctets('/rapports/$id/fichier');
 }

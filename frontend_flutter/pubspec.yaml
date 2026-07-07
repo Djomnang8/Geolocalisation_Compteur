@@ -11,6 +11,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Calendrier et selecteur de plage de dates en francais
+  flutter_localizations:
+    sdk: flutter
 
   # Appels HTTP vers l'API Frontend (BFF, port 8080)
   http: ^1.2.2
@@ -21,12 +24,15 @@ dependencies:
   geolocator: ^13.0.1
   # Polices IBM Plex Sans / IBM Plex Mono (identiques a la maquette)
   google_fonts: ^6.2.1
-  intl: ^0.19.0
+  intl: any
   cupertino_icons: ^1.0.8
   # Photo de l'inspection (camera / galerie)
   image_picker: ^1.1.2
   # Fichier joint au rapport (PDF, DOCX, TXT...)
   file_picker: ^8.1.4
+  # Ouverture des pieces jointes recues (admin) avec l'application associee
+  open_filex: ^4.5.0
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:

@@ -44,6 +44,27 @@ class ApiClient {
   Future<dynamic> delete(String chemin) =>
       _executer((base) => http.delete(Uri.parse('$base$chemin'), headers: _entetes));
 
+  /// Telechargement binaire (photo d'inspection, fichier joint) : renvoie
+  /// les octets bruts de la reponse.
+  Future<List<int>> getOctets(String chemin) async {
+    final base = await ApiConfig.baseUrl();
+    try {
+      final reponse = await http
+          .get(Uri.parse('$base$chemin'), headers: _entetes)
+          .timeout(const Duration(seconds: 25));
+      if (reponse.statusCode >= 200 && reponse.statusCode < 300) {
+        return reponse.bodyBytes;
+      }
+      _traiter(reponse); // leve l'ApiException avec le message du serveur
+      return reponse.bodyBytes;
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      ApiConfig.reinitialiser();
+      rethrow;
+    }
+  }
+
   Future<dynamic> _executer(
       Future<http.Response> Function(String base) requete) async {
     final base = await ApiConfig.baseUrl();

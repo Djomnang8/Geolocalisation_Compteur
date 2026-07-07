@@ -14,6 +14,8 @@ class Rapport {
   final String? observations;
   final bool photo;
   final String? fichier;
+  final bool photoDisponible; // octets presents sur le serveur
+  final bool fichierDisponible;
   final String gps;
   final String statut; // EN_ATTENTE, VALIDE, REJETE
   final String? commentaireAdmin;
@@ -32,6 +34,8 @@ class Rapport {
     this.observations,
     required this.photo,
     this.fichier,
+    this.photoDisponible = false,
+    this.fichierDisponible = false,
     required this.gps,
     required this.statut,
     this.commentaireAdmin,
@@ -51,6 +55,8 @@ class Rapport {
         observations: json['observations'],
         photo: json['photo'] == true,
         fichier: json['fichier'],
+        photoDisponible: json['photoDisponible'] == true,
+        fichierDisponible: json['fichierDisponible'] == true,
         gps: json['gps'] ?? '—',
         statut: json['statut'] ?? 'EN_ATTENTE',
         commentaireAdmin: json['commentaireAdmin'],

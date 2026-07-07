@@ -65,6 +65,28 @@ public class RapportService {
                 .orElseThrow(() -> new IllegalArgumentException("Rapport introuvable.")));
     }
 
+    /** Octets de la photo jointe (consultation par l'administrateur). */
+    public byte[] photo(Long id) {
+        RapportInspection r = rapportRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Rapport introuvable."));
+        if (r.getPhotoDonnees() == null || r.getPhotoDonnees().length == 0) {
+            throw new IllegalArgumentException("Aucune photo enregistrée pour ce rapport.");
+        }
+        return r.getPhotoDonnees();
+    }
+
+    /** Octets du fichier joint + son nom (consultation par l'administrateur). */
+    public Object[] fichier(Long id) {
+        RapportInspection r = rapportRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Rapport introuvable."));
+        if (r.getFichierDonnees() == null || r.getFichierDonnees().length == 0) {
+            throw new IllegalArgumentException("Aucun fichier enregistré pour ce rapport.");
+        }
+        String nom = (r.getFichier() == null || r.getFichier().isBlank())
+                ? "piece_jointe" : r.getFichier();
+        return new Object[]{nom, r.getFichierDonnees()};
+    }
+
     /** Envoi d'un rapport d'inspection par le technicien. */
     @Transactional
     public RapportDto envoyer(RapportRequest requete) {
@@ -93,6 +115,15 @@ public class RapportService {
         r.setObservations(requete.observations());
         r.setPhoto(Boolean.TRUE.equals(requete.photo()));
         r.setFichier(requete.fichier());
+        // Pieces jointes : octets transmis en Base64, stockes pour consultation
+        // par l'administrateur depuis la page "Detail du rapport".
+        if (requete.photoBase64() != null && !requete.photoBase64().isBlank()) {
+            r.setPhotoDonnees(java.util.Base64.getDecoder().decode(requete.photoBase64()));
+            r.setPhoto(true);
+        }
+        if (requete.fichierBase64() != null && !requete.fichierBase64().isBlank()) {
+            r.setFichierDonnees(java.util.Base64.getDecoder().decode(requete.fichierBase64()));
+        }
         if (requete.latitude() != null && requete.longitude() != null) {
             r.setLatitude(BigDecimal.valueOf(requete.latitude()));
             r.setLongitude(BigDecimal.valueOf(requete.longitude()));

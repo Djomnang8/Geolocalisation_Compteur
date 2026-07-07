@@ -10,7 +10,8 @@ import com.socadel.backend.entity.RapportInspection;
 public record RapportDto(Long id, Long compteurId, String reference, String zone,
                          String technicienNom, String technicienMatricule, String date,
                          String etat, String etatAutre, List<String> anomalies,
-                         String observations, boolean photo, String fichier, String gps,
+                         String observations, boolean photo, String fichier,
+                         boolean photoDisponible, boolean fichierDisponible, String gps,
                          String statut, String commentaireAdmin) {
 
     private static final DateTimeFormatter FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -30,6 +31,9 @@ public record RapportDto(Long id, Long compteurId, String reference, String zone
                 r.getTechnicien() == null ? null : r.getTechnicien().getMatricule(),
                 r.getDateIntervention().format(FORMAT),
                 r.getEtat().name(), r.getEtatAutre(), anomalies, r.getObservations(),
-                r.isPhoto(), r.getFichier(), gps, r.getStatut().name(), r.getCommentaireAdmin());
+                r.isPhoto(), r.getFichier(),
+                r.getPhotoDonnees() != null && r.getPhotoDonnees().length > 0,
+                r.getFichierDonnees() != null && r.getFichierDonnees().length > 0,
+                gps, r.getStatut().name(), r.getCommentaireAdmin());
     }
 }

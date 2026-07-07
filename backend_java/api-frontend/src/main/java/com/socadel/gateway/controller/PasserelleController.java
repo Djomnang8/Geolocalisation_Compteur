@@ -40,8 +40,8 @@ public class PasserelleController {
     }
 
     @RequestMapping("/api/**")
-    public ResponseEntity<String> transmettre(HttpServletRequest requete,
-                                              @RequestBody(required = false) String corps) {
+    public ResponseEntity<byte[]> transmettre(HttpServletRequest requete,
+                                              @RequestBody(required = false) byte[] corps) {
         String chemin = requete.getRequestURI();
         String parametres = requete.getQueryString();
 
@@ -52,7 +52,8 @@ public class PasserelleController {
                     || !jetonVerifier.estValide(entete.substring(7))) {
                 return ResponseEntity.status(401)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body("{\"message\":\"Jeton invalide ou manquant (API Frontend).\"}");
+                        .body("{\"message\":\"Jeton invalide ou manquant (API Frontend).\"}"
+                                .getBytes(java.nio.charset.StandardCharsets.UTF_8));
             }
         }
 
@@ -71,18 +72,32 @@ public class PasserelleController {
         }
 
         try {
-            ResponseEntity<String> reponse = rest.exchange(url,
+            ResponseEntity<byte[]> reponse = rest.exchange(url,
                     HttpMethod.valueOf(requete.getMethod()),
-                    new HttpEntity<>(corps, entetes), String.class);
-            // 3. Retransmission fidele de la reponse au mobile
+                    new HttpEntity<>(corps, entetes), byte[].class);
+            // 3. Retransmission fidele de la reponse au mobile : le type de
+            // contenu d'origine est conserve (JSON, image JPEG, fichier...)
+            HttpHeaders entetesReponse = new HttpHeaders();
+            MediaType type = reponse.getHeaders().getContentType();
+            entetesReponse.setContentType(type == null ? MediaType.APPLICATION_JSON : type);
+            String disposition = reponse.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
+            if (disposition != null) {
+                entetesReponse.set(HttpHeaders.CONTENT_DISPOSITION, disposition);
+            }
             return ResponseEntity.status(reponse.getStatusCode())
-                    .contentType(MediaType.APPLICATION_JSON)
+                    .headers(entetesReponse)
                     .body(reponse.getBody());
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            // Erreur metier du backend (400, 401, 404...) : retransmise telle quelle
+            return ResponseEntity.status(e.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(e.getResponseBodyAsByteArray());
         } catch (Exception e) {
             return ResponseEntity.status(503)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body("{\"message\":\"API Backend indisponible. Vérifiez que le service"
-                            + " est démarré (port 8081).\"}");
+                    .body(("{\"message\":\"API Backend indisponible. Vérifiez que le service"
+                            + " est démarré (port 8081).\"}")
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
     }
 }
