@@ -24,11 +24,13 @@ class AuthService {
     return utilisateur;
   }
 
-  /// Page profil : modification du nom et/ou du mot de passe.
-  Future<Utilisateur> modifierProfil({String? nom, String? motDePasse}) async {
+  /// Page profil : modification du nom, du telephone et/ou du mot de passe.
+  Future<Utilisateur> modifierProfil(
+      {String? nom, String? telephone, String? motDePasse}) async {
     final donnees = await ApiClient.instance.put('/profil', {
       'matricule': Session.instance.utilisateur!.matricule,
       'nom': nom,
+      'telephone': telephone,
       'motDePasse': motDePasse,
     });
     final utilisateur = Utilisateur.fromJson(donnees);

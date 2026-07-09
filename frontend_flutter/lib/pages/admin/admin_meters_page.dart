@@ -23,6 +23,7 @@ class _AdminMetersPageState extends State<AdminMetersPage> {
   final _recherche = TextEditingController();
   List<Compteur> _tous = const [];
   String _filtre = 'TOUS';
+  int _page = 0; // pagination (10 compteurs par page)
   bool _chargement = true;
   String? _erreur;
 
@@ -111,7 +112,7 @@ class _AdminMetersPageState extends State<AdminMetersPage> {
               children: [
                 TextField(
                   controller: _recherche,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setState(() => _page = 0),
                   style:
                       GoogleFonts.ibmPlexSans(fontSize: 13.5, color: AppColors.texte),
                   decoration: decorationSocadel(
@@ -132,7 +133,10 @@ class _AdminMetersPageState extends State<AdminMetersPage> {
                           nombre: _tous.length,
                           active: _filtre == 'TOUS',
                           couleur: AppColors.primaire,
-                          onTap: () => setState(() => _filtre = 'TOUS')),
+                          onTap: () => setState(() {
+                                _filtre = 'TOUS';
+                                _page = 0;
+                              })),
                       for (final meta in StatutMeta.liste) ...[
                         const SizedBox(width: 7),
                         PuceFiltre(
@@ -141,7 +145,10 @@ class _AdminMetersPageState extends State<AdminMetersPage> {
                                 _tous.where((c) => c.statut == meta.code).length,
                             active: _filtre == meta.code,
                             couleur: meta.couleur,
-                            onTap: () => setState(() => _filtre = meta.code)),
+                            onTap: () => setState(() {
+                                  _filtre = meta.code;
+                                  _page = 0;
+                                })),
                       ],
                     ],
                   ),
@@ -151,14 +158,19 @@ class _AdminMetersPageState extends State<AdminMetersPage> {
                   EncadreVide(texte: _erreur!),
                   const SizedBox(height: 10),
                 ],
-                ...affiches.map((c) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _CarteCompteurCrud(
-                        compteur: c,
-                        onModifier: () => _ouvrirFormulaire(c),
-                        onSupprimer: () => _supprimer(c),
-                      ),
-                    )),
+                ...PaginationSocadel.tranche(affiches, _page)
+                    .map((c) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _CarteCompteurCrud(
+                            compteur: c,
+                            onModifier: () => _ouvrirFormulaire(c),
+                            onSupprimer: () => _supprimer(c),
+                          ),
+                        )),
+                PaginationSocadel(
+                    total: affiches.length,
+                    page: _page,
+                    onChange: (p) => setState(() => _page = p)),
                 const SizedBox(height: 6),
                 // Ajouter un compteur (bordure pointillee de la maquette)
                 InkWell(

@@ -21,6 +21,7 @@ class AdminTechniciensPage extends StatefulWidget {
 class _AdminTechniciensPageState extends State<AdminTechniciensPage> {
   final _recherche = TextEditingController();
   List<Utilisateur> _tous = const [];
+  int _page = 0; // pagination (10 techniciens par page)
   bool _chargement = true;
   String? _erreur;
 
@@ -129,7 +130,7 @@ class _AdminTechniciensPageState extends State<AdminTechniciensPage> {
                 children: [
                   TextField(
                     controller: _recherche,
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => setState(() => _page = 0),
                     style: GoogleFonts.ibmPlexSans(
                         fontSize: 13.5, color: AppColors.texte),
                     decoration:
@@ -143,15 +144,20 @@ class _AdminTechniciensPageState extends State<AdminTechniciensPage> {
                     EncadreVide(texte: _erreur!),
                     const SizedBox(height: 10),
                   ],
-                  ...affiches.map((u) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _CarteTechnicien(
-                          utilisateur: u,
-                          onBasculerRole: () => _basculerRole(u),
-                          onModifier: () => _ouvrirFormulaire(u),
-                          onSupprimer: () => _supprimer(u),
-                        ),
-                      )),
+                  ...PaginationSocadel.tranche(affiches, _page)
+                      .map((u) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _CarteTechnicien(
+                              utilisateur: u,
+                              onBasculerRole: () => _basculerRole(u),
+                              onModifier: () => _ouvrirFormulaire(u),
+                              onSupprimer: () => _supprimer(u),
+                            ),
+                          )),
+                  PaginationSocadel(
+                      total: affiches.length,
+                      page: _page,
+                      onChange: (p) => setState(() => _page = p)),
                   const SizedBox(height: 6),
                   InkWell(
                     borderRadius: BorderRadius.circular(13),

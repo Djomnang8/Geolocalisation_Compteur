@@ -289,6 +289,147 @@ class PuceFiltre extends StatelessWidget {
   }
 }
 
+/// Bouton d'ouverture du selecteur de plage de dates (periode), avec une
+/// croix pour effacer la plage active.
+class BoutonPlageDates extends StatelessWidget {
+  final String libelle;
+  final bool actif;
+  final VoidCallback onTap;
+  final VoidCallback? onEffacer;
+
+  const BoutonPlageDates({
+    super.key,
+    required this.libelle,
+    required this.actif,
+    required this.onTap,
+    this.onEffacer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: actif ? AppColors.primaire : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: actif ? AppColors.primaire : const Color(0xFFE1E6EE),
+              width: 1.5),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.calendar_month_outlined,
+              size: 14, color: actif ? Colors.white : AppColors.primaire),
+          const SizedBox(width: 6),
+          Text(libelle,
+              style: GoogleFonts.ibmPlexSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: actif ? Colors.white : AppColors.primaire)),
+          if (onEffacer != null) ...[
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: onEffacer,
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
+/// Barre de pagination de la maquette : visible uniquement quand la liste
+/// depasse [parPage] elements (10 par defaut). Affiche « Page x sur y »,
+/// les fleches precedent / suivant et le nombre total d'elements.
+class PaginationSocadel extends StatelessWidget {
+  final int total;
+  final int page; // commence a 0
+  final int parPage;
+  final ValueChanged<int> onChange;
+
+  const PaginationSocadel({
+    super.key,
+    required this.total,
+    required this.page,
+    required this.onChange,
+    this.parPage = 10,
+  });
+
+  /// Nombre de pages necessaires pour [total] elements.
+  static int pages(int total, {int parPage = 10}) =>
+      total <= parPage ? 1 : (total / parPage).ceil();
+
+  /// Tranche de la liste correspondant a la page demandee.
+  static List<T> tranche<T>(List<T> liste, int page, {int parPage = 10}) {
+    if (liste.length <= parPage) return liste;
+    final debut = (page * parPage).clamp(0, liste.length);
+    final fin = (debut + parPage).clamp(0, liste.length);
+    return liste.sublist(debut, fin);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // La pagination n'apparait que lorsque la liste depasse une page.
+    if (total <= parPage) return const SizedBox.shrink();
+    final nbPages = pages(total, parPage: parPage);
+    final courante = page.clamp(0, nbPages - 1);
+
+    Widget fleche(IconData icone, bool active, VoidCallback onTap) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: active ? onTap : null,
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: active ? Colors.white : AppColors.grisFond,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.bordure),
+          ),
+          child: Icon(icone,
+              size: 17,
+              color: active ? AppColors.primaire : AppColors.inactifNav),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          fleche(Icons.chevron_left, courante > 0,
+              () => onChange(courante - 1)),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.bordure),
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('Page ${courante + 1} sur $nbPages',
+                  style: GoogleFonts.ibmPlexSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.texte)),
+              Text('$total éléments',
+                  style: GoogleFonts.ibmPlexSans(
+                      fontSize: 10, color: AppColors.texteLeger)),
+            ]),
+          ),
+          fleche(Icons.chevron_right, courante < nbPages - 1,
+              () => onChange(courante + 1)),
+        ],
+      ),
+    );
+  }
+}
+
 /// Encadre vide en pointilles (etats vides de la maquette).
 class EncadreVide extends StatelessWidget {
   final String texte;

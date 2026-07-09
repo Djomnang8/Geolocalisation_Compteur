@@ -23,6 +23,7 @@ class _AdminAttributionPageState extends State<AdminAttributionPage> {
   List<Utilisateur> _techniciens = const [];
   List<Compteur> _compteurs = const [];
   Utilisateur? _selection;
+  int _page = 0; // pagination (10 compteurs par page)
   bool _chargement = true;
   String? _erreur;
   int? _enCours; // id du compteur en cours d'attribution
@@ -244,7 +245,7 @@ class _AdminAttributionPageState extends State<AdminAttributionPage> {
           ],
           if (_compteurs.isEmpty && _erreur == null)
             const EncadreVide(texte: 'Aucun compteur enregistré.'),
-          ..._compteurs.map((c) {
+          ...PaginationSocadel.tranche(_compteurs, _page).map((c) {
             final meta = StatutMeta.de(c.statut);
             final attribueAuSelectionne = selection != null &&
                 c.technicienMatricule == selection.matricule;
@@ -320,6 +321,10 @@ class _AdminAttributionPageState extends State<AdminAttributionPage> {
               ),
             );
           }),
+          PaginationSocadel(
+              total: _compteurs.length,
+              page: _page,
+              onChange: (p) => setState(() => _page = p)),
         ],
       ),
     );

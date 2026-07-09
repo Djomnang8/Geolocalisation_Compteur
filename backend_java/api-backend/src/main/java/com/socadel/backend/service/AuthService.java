@@ -59,12 +59,15 @@ public class AuthService {
         return new LoginResponse(token, UtilisateurDto.depuis(u, compteurs));
     }
 
-    /** Page profil : modification du nom et/ou du mot de passe. */
+    /** Page profil : modification du nom, du telephone et/ou du mot de passe. */
     public UtilisateurDto modifierProfil(ProfilRequest requete) {
         Utilisateur u = utilisateurRepo.findByMatriculeIgnoreCase(requete.matricule())
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
         if (!estVide(requete.nom())) {
             u.setNom(requete.nom().trim());
+        }
+        if (requete.telephone() != null) {
+            u.setTelephone(requete.telephone().trim());
         }
         if (!estVide(requete.motDePasse())) {
             u.setMotDePasse(hacher(requete.motDePasse().trim()));

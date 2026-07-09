@@ -20,6 +20,7 @@ class TechReportsPage extends StatefulWidget {
 
 class _TechReportsPageState extends State<TechReportsPage> {
   List<Rapport> _rapports = const [];
+  int _page = 0; // pagination (10 rapports par page)
   bool _chargement = true;
   String? _erreur;
 
@@ -214,10 +215,16 @@ class _TechReportsPageState extends State<TechReportsPage> {
             const EncadreVide(
                 texte: 'Aucun rapport envoyé pour le moment.\n'
                     'Inspectez un compteur depuis la carte pour créer un rapport.'),
-          ..._rapports.map((r) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _CarteMonRapport(rapport: r, onTap: () => _ouvrir(r)),
-              )),
+          ...PaginationSocadel.tranche(_rapports, _page)
+              .map((r) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child:
+                        _CarteMonRapport(rapport: r, onTap: () => _ouvrir(r)),
+                  )),
+          PaginationSocadel(
+              total: _rapports.length,
+              page: _page,
+              onChange: (p) => setState(() => _page = p)),
         ],
       ),
     );

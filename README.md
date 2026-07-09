@@ -60,8 +60,13 @@ hors connexion.
 > jointes sans perdre vos données :
 > `ALTER TABLE rapport_inspection ADD COLUMN photo_donnees LONGBLOB NULL AFTER photo, ADD COLUMN fichier_donnees LONGBLOB NULL AFTER fichier;`
 
-### 2. Backend (Java 17+ et Maven requis)
-Dans deux terminaux séparés (ne rien ajouter après la commande) :
+### 2. Backend (Java 21 et Maven requis)
+
+**Démarrage automatique (recommandé)** : double-cliquer sur
+`backend_java/demarrer_apis.bat` — il lance les deux API dans deux
+fenêtres, quel que soit l'emplacement du projet sur le disque.
+
+Ou manuellement, dans deux terminaux séparés (ne rien ajouter après la commande) :
 ```bat
 cd backend_java
 
@@ -73,6 +78,9 @@ mvn -pl api-frontend spring-boot:run
 ```
 Test rapide : `POST http://localhost:8080/api/auth/login`
 avec `{"nom":"Alice NGONO","matricule":"ADM-1007","motDePasse":"1234"}`.
+
+> Le rôle détaillé de chaque API et de chacune de leurs classes est
+> expliqué en langage simple dans `backend_java/EXPLICATION_DES_API.md`.
 
 ### 3. Frontend Flutter
 ```bat

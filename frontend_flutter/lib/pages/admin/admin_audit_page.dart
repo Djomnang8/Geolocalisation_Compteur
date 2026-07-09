@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/app_colors.dart';
 import '../../services/stats_service.dart';
 import '../../widgets/soc_widgets.dart';
 
 /// Journal d'audit (maquette "ADMIN AUDIT") : traçabilité des actions
-/// sensibles avec filtres par utilisateur, par date et par type d'action,
-/// affichée en frise chronologique (norme ISO 27001).
+/// sensibles avec filtres par utilisateur, par plage de dates et par type
+/// d'action, affichée en frise chronologique (norme ISO 27001).
 class AdminAuditPage extends StatefulWidget {
   const AdminAuditPage({super.key});
 
@@ -16,13 +17,17 @@ class AdminAuditPage extends StatefulWidget {
 }
 
 class _AdminAuditPageState extends State<AdminAuditPage> {
+  static final _formatDate = DateFormat('dd/MM/yyyy HH:mm');
+  static final _formatJour = DateFormat('dd/MM/yyyy');
+
   List<Map<String, dynamic>> _journal = const [];
   bool _chargement = true;
   String? _erreur;
 
   String _filtreUtilisateur = 'Tous';
-  String _filtreDate = 'Toutes';
+  DateTimeRange? _plage; // plage de dates des actions
   String _filtreType = 'TOUS';
+  int _page = 0; // pagination (10 actions par page)
 
   static const _types = [
     ('TOUS', 'Toutes les actions'),
@@ -55,14 +60,46 @@ class _AdminAuditPageState extends State<AdminAuditPage> {
         ..._journal.map((a) => '${a['utilisateur']}').toSet().toList()..sort(),
       ];
 
-  List<String> get _dates => [
-        'Toutes',
-        ..._journal
-            .map((a) => '${a['date']}'.split(' ').first)
-            .toSet()
-            .toList()
-          ..sort((a, b) => b.compareTo(a)),
-      ];
+  /// Selecteur de plage de dates (calendrier en francais).
+  Future<void> _choisirPlage() async {
+    final maintenant = DateTime.now();
+    final plage = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(maintenant.year - 2),
+      lastDate: DateTime(maintenant.year + 1),
+      initialDateRange: _plage,
+      helpText: 'Période des actions',
+      saveText: 'Appliquer',
+      builder: (context, enfant) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context)
+              .colorScheme
+              .copyWith(primary: AppColors.primaire),
+        ),
+        child: enfant!,
+      ),
+    );
+    if (plage != null) {
+      setState(() {
+        _plage = plage;
+        _page = 0;
+      });
+    }
+  }
+
+  bool _dansLaPlage(String date) {
+    if (_plage == null) return true;
+    try {
+      final d = _formatDate.parse(date);
+      final debut =
+          DateTime(_plage!.start.year, _plage!.start.month, _plage!.start.day);
+      final fin = DateTime(
+          _plage!.end.year, _plage!.end.month, _plage!.end.day, 23, 59, 59);
+      return !d.isBefore(debut) && !d.isAfter(fin);
+    } catch (_) {
+      return true;
+    }
+  }
 
   bool _correspondType(String action) {
     final a = action.toLowerCase();
@@ -80,9 +117,9 @@ class _AdminAuditPageState extends State<AdminAuditPage> {
   List<Map<String, dynamic>> get _filtres => _journal.where((a) {
         final okUtilisateur = _filtreUtilisateur == 'Tous' ||
             '${a['utilisateur']}' == _filtreUtilisateur;
-        final okDate = _filtreDate == 'Toutes' ||
-            '${a['date']}'.startsWith(_filtreDate);
-        return okUtilisateur && okDate && _correspondType('${a['action']}');
+        return okUtilisateur &&
+            _dansLaPlage('${a['date']}') &&
+            _correspondType('${a['action']}');
       }).toList();
 
   @override
@@ -100,15 +137,41 @@ class _AdminAuditPageState extends State<AdminAuditPage> {
               style: GoogleFonts.ibmPlexSans(
                   fontSize: 12.5, color: AppColors.texteSecondaire)),
           const SizedBox(height: 14),
-          // Filtres utilisateur / date
-          Row(children: [
+          // Filtres utilisateur / plage de dates
+          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Expanded(
                 child: _liste('Utilisateur', _filtreUtilisateur, _utilisateurs,
-                    (v) => setState(() => _filtreUtilisateur = v))),
+                    (v) => setState(() {
+                          _filtreUtilisateur = v;
+                          _page = 0;
+                        }))),
             const SizedBox(width: 9),
             Expanded(
-                child: _liste('Date', _filtreDate, _dates,
-                    (v) => setState(() => _filtreDate = v))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Période',
+                      style: GoogleFonts.ibmPlexSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.texteLeger)),
+                  const SizedBox(height: 5),
+                  BoutonPlageDates(
+                    libelle: _plage == null
+                        ? 'Toutes les dates'
+                        : '${_formatJour.format(_plage!.start)} – ${_formatJour.format(_plage!.end)}',
+                    actif: _plage != null,
+                    onTap: _choisirPlage,
+                    onEffacer: _plage == null
+                        ? null
+                        : () => setState(() {
+                              _plage = null;
+                              _page = 0;
+                            }),
+                  ),
+                ],
+              ),
+            ),
           ]),
           const SizedBox(height: 12),
           Text("Type d'action",
@@ -127,7 +190,10 @@ class _AdminAuditPageState extends State<AdminAuditPage> {
                       label: libelle,
                       active: _filtreType == code,
                       couleur: AppColors.primaire,
-                      onTap: () => setState(() => _filtreType = code)),
+                      onTap: () => setState(() {
+                            _filtreType = code;
+                            _page = 0;
+                          })),
                   const SizedBox(width: 7),
                 ],
               ],
@@ -141,7 +207,8 @@ class _AdminAuditPageState extends State<AdminAuditPage> {
           if (affiches.isEmpty && _erreur == null)
             const EncadreVide(texte: 'Aucune action pour ces filtres.'),
           // Frise chronologique (identique a la maquette)
-          ...affiches.map((a) => IntrinsicHeight(
+          ...PaginationSocadel.tranche(affiches, _page)
+              .map((a) => IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -187,6 +254,10 @@ class _AdminAuditPageState extends State<AdminAuditPage> {
                   ],
                 ),
               )),
+          PaginationSocadel(
+              total: affiches.length,
+              page: _page,
+              onChange: (p) => setState(() => _page = p)),
         ],
       ),
     );

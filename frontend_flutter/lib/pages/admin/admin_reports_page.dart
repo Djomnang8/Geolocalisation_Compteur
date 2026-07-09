@@ -30,6 +30,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
   String _filtre = 'TOUS'; // statut du rapport
   String _filtreEtat = 'TOUS'; // statut du compteur constate
   DateTimeRange? _plage; // plage de dates d'intervention
+  int _page = 0; // pagination (10 rapports par page)
   bool _chargement = true;
   String? _erreur;
 
@@ -69,7 +70,12 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
         child: enfant!,
       ),
     );
-    if (plage != null) setState(() => _plage = plage);
+    if (plage != null) {
+      setState(() {
+        _plage = plage;
+        _page = 0;
+      });
+    }
   }
 
   /// Filtres combines : statut du rapport, statut du compteur, plage de
@@ -112,7 +118,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
           child: Column(children: [
             TextField(
               controller: _recherche,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _page = 0),
               style: GoogleFonts.ibmPlexSans(fontSize: 13.5, color: AppColors.texte),
               decoration: decorationSocadel(
                       'Rechercher un technicien, une zone…')
@@ -127,7 +133,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                             size: 16, color: AppColors.texteLeger),
                         onPressed: () {
                           _recherche.clear();
-                          setState(() {});
+                          setState(() => _page = 0);
                         },
                       ),
               ),
@@ -139,14 +145,18 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  _BoutonPlageDates(
+                  BoutonPlageDates(
                     libelle: _plage == null
                         ? 'Période'
                         : '${_formatJour.format(_plage!.start)} – ${_formatJour.format(_plage!.end)}',
                     actif: _plage != null,
                     onTap: _choisirPlage,
-                    onEffacer:
-                        _plage == null ? null : () => setState(() => _plage = null),
+                    onEffacer: _plage == null
+                        ? null
+                        : () => setState(() {
+                              _plage = null;
+                              _page = 0;
+                            }),
                   ),
                   const SizedBox(width: 7),
                   for (final (code, libelle) in [
@@ -161,7 +171,10 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                         couleur: _filtre == code
                             ? AppColors.primaire
                             : const Color(0xFF5A6577),
-                        onTap: () => setState(() => _filtre = code)),
+                        onTap: () => setState(() {
+                              _filtre = code;
+                              _page = 0;
+                            })),
                     const SizedBox(width: 7),
                   ],
                 ],
@@ -178,7 +191,10 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                       label: 'Tous états',
                       active: _filtreEtat == 'TOUS',
                       couleur: AppColors.primaire,
-                      onTap: () => setState(() => _filtreEtat = 'TOUS')),
+                      onTap: () => setState(() {
+                            _filtreEtat = 'TOUS';
+                            _page = 0;
+                          })),
                   for (final meta in [
                     StatutMeta.de('ACTIF'),
                     StatutMeta.de('MAINTENANCE'),
@@ -191,7 +207,10 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                         nombre: _tous.where((r) => r.etat == meta.code).length,
                         active: _filtreEtat == meta.code,
                         couleur: meta.couleur,
-                        onTap: () => setState(() => _filtreEtat = meta.code)),
+                        onTap: () => setState(() {
+                              _filtreEtat = meta.code;
+                              _page = 0;
+                            })),
                   ],
                 ],
               ),
@@ -219,17 +238,22 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                       if (affiches.isEmpty && _erreur == null)
                         const EncadreVide(
                             texte: 'Aucun rapport pour ces filtres.'),
-                      ...affiches.map((r) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _CarteRapport(
-                              rapport: r,
-                              onTap: () => Navigator.of(context)
-                                  .push(MaterialPageRoute(
-                                      builder: (_) =>
-                                          AdminReportDetailPage(rapport: r)))
-                                  .then((_) => _charger()),
-                            ),
-                          )),
+                      ...PaginationSocadel.tranche(affiches, _page)
+                          .map((r) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _CarteRapport(
+                                  rapport: r,
+                                  onTap: () => Navigator.of(context)
+                                      .push(MaterialPageRoute(
+                                          builder: (_) =>
+                                              AdminReportDetailPage(rapport: r)))
+                                      .then((_) => _charger()),
+                                ),
+                              )),
+                      PaginationSocadel(
+                          total: affiches.length,
+                          page: _page,
+                          onChange: (p) => setState(() => _page = p)),
                     ],
                   ),
                 ),
@@ -239,55 +263,6 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
   }
 }
 
-/// Bouton du selecteur de plage de dates (periode d'intervention).
-class _BoutonPlageDates extends StatelessWidget {
-  final String libelle;
-  final bool actif;
-  final VoidCallback onTap;
-  final VoidCallback? onEffacer;
-
-  const _BoutonPlageDates({
-    required this.libelle,
-    required this.actif,
-    required this.onTap,
-    this.onEffacer,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: actif ? AppColors.primaire : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: actif ? AppColors.primaire : const Color(0xFFE1E6EE),
-              width: 1.5),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.calendar_month_outlined,
-              size: 14, color: actif ? Colors.white : AppColors.primaire),
-          const SizedBox(width: 6),
-          Text(libelle,
-              style: GoogleFonts.ibmPlexSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: actif ? Colors.white : AppColors.primaire)),
-          if (onEffacer != null) ...[
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: onEffacer,
-              child: const Icon(Icons.close, size: 14, color: Colors.white),
-            ),
-          ],
-        ]),
-      ),
-    );
-  }
-}
 
 class _CarteRapport extends StatelessWidget {
   final Rapport rapport;

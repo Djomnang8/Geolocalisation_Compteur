@@ -18,6 +18,7 @@ class AdminTrackingPage extends StatefulWidget {
 
 class _AdminTrackingPageState extends State<AdminTrackingPage> {
   List<Map<String, dynamic>> _suivi = const [];
+  int _page = 0; // pagination (10 techniciens par page)
   bool _chargement = true;
   String? _erreur;
 
@@ -63,7 +64,7 @@ class _AdminTrackingPageState extends State<AdminTrackingPage> {
           ],
           if (_suivi.isEmpty && _erreur == null)
             const EncadreVide(texte: 'Aucun technicien enregistré.'),
-          ..._suivi.map((t) => Padding(
+          ...PaginationSocadel.tranche(_suivi, _page).map((t) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
                   padding: const EdgeInsets.all(14),
@@ -141,6 +142,10 @@ class _AdminTrackingPageState extends State<AdminTrackingPage> {
                   ]),
                 ),
               )),
+          PaginationSocadel(
+              total: _suivi.length,
+              page: _page,
+              onChange: (p) => setState(() => _page = p)),
         ],
       ),
     );

@@ -23,7 +23,7 @@ class AdminMeterFormPage extends StatefulWidget {
 
 class _AdminMeterFormPageState extends State<AdminMeterFormPage> {
   late final _reference = TextEditingController(text: widget.compteur?.reference);
-  late final _marque = TextEditingController(text: widget.compteur?.marque);
+  late final _modele = TextEditingController(text: widget.compteur?.modele);
   late final _index = TextEditingController(text: widget.compteur?.indexInitial);
   late final _quartier = TextEditingController(text: widget.compteur?.quartier);
   late final _latitude =
@@ -31,7 +31,7 @@ class _AdminMeterFormPageState extends State<AdminMeterFormPage> {
   late final _longitude =
       TextEditingController(text: widget.compteur?.longitude.toString());
 
-  String? _modele;
+  String? _marque;
   String? _type;
   String? _zone;
   String? _technicienMatricule;
@@ -40,7 +40,11 @@ class _AdminMeterFormPageState extends State<AdminMeterFormPage> {
   List<Utilisateur> _techniciens = const [];
   bool _enregistrement = false;
 
-  static const _modeles = ['0142', '0143', '0144', '3723', '3724', '017900', '026'];
+  /// Marques de compteurs electriques utilisees par SOCADEL / ENEO.
+  static const _marques = [
+    'HEXING', 'INHEMETER', 'DONSUN', 'GENTAI', 'HOLLEY', 'WASION',
+    'LANDIS+GYR', 'ITRON', 'EDMI', 'CLOU', 'SHENZHEN STAR', 'ELSTER',
+  ];
   static const _types = [
     'Prépayé STS1', 'Prépayé STS2', 'Postpayé', 'Monophasé', 'Triphasé'
   ];
@@ -48,11 +52,126 @@ class _AdminMeterFormPageState extends State<AdminMeterFormPage> {
   @override
   void initState() {
     super.initState();
-    _modele = widget.compteur?.modele;
+    _marque = widget.compteur?.marque;
     _type = widget.compteur?.type ?? 'Prépayé STS1';
     _zone = widget.compteur?.zone;
     _technicienMatricule = widget.compteur?.technicienMatricule;
     _chargerListes();
+  }
+
+  /// Choix de la marque : liste deroulante avec barre de recherche
+  /// (feuille de selection filtrable).
+  void _choisirMarque() {
+    final recherche = TextEditingController();
+    // La marque deja enregistree reste proposee meme si elle n'est pas
+    // dans la liste standard.
+    final toutes = {
+      ..._marques,
+      if (_marque != null && _marque!.isNotEmpty) _marque!,
+    }.toList()
+      ..sort();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.fond,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7),
+      builder: (contexteFeuille) => StatefulBuilder(
+        builder: (context, setStateFeuille) {
+          final q = recherche.text.trim().toLowerCase();
+          final filtrees =
+              toutes.where((m) => q.isEmpty || m.toLowerCase().contains(q)).toList();
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFCCD4E0),
+                            borderRadius: BorderRadius.circular(3))),
+                  ),
+                  Text('Choisir la marque du compteur',
+                      style: GoogleFonts.ibmPlexSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.texte)),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: recherche,
+                    autofocus: true,
+                    onChanged: (_) => setStateFeuille(() {}),
+                    style: GoogleFonts.ibmPlexSans(
+                        fontSize: 13.5, color: AppColors.texte),
+                    decoration: decorationSocadel('Rechercher une marque…')
+                        .copyWith(
+                      prefixIcon: const Icon(Icons.search,
+                          size: 18, color: AppColors.texteLeger),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        if (_marque != null)
+                          ListTile(
+                            leading: const Icon(Icons.clear,
+                                size: 19, color: AppColors.rougeSombre),
+                            title: Text('Effacer la marque',
+                                style: GoogleFonts.ibmPlexSans(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.rougeSombre)),
+                            onTap: () {
+                              Navigator.of(contexteFeuille).pop();
+                              setState(() => _marque = null);
+                            },
+                          ),
+                        if (filtrees.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: EncadreVide(
+                                texte: 'Aucune marque ne correspond.'),
+                          ),
+                        for (final marque in filtrees)
+                          ListTile(
+                            leading: Icon(
+                                marque == _marque
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                size: 19,
+                                color: marque == _marque
+                                    ? AppColors.primaire
+                                    : AppColors.texteLeger),
+                            title: Text(marque,
+                                style: GoogleFonts.ibmPlexSans(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.texte)),
+                            onTap: () {
+                              Navigator.of(contexteFeuille).pop();
+                              setState(() => _marque = marque);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _chargerListes() async {
@@ -80,8 +199,8 @@ class _AdminMeterFormPageState extends State<AdminMeterFormPage> {
     try {
       final fiche = {
         'reference': _reference.text.trim(),
-        'marque': _marque.text.trim(),
-        'modele': _modele,
+        'marque': _marque,
+        'modele': _modele.text.trim(),
         'type': _type,
         'indexInitial': _index.text.trim(),
         'quartier': _quartier.text.trim(),
@@ -129,19 +248,59 @@ class _AdminMeterFormPageState extends State<AdminMeterFormPage> {
               mono: true),
           const SizedBox(height: 14),
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Marque : liste deroulante avec barre de recherche
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Marque (optionnel)',
+                      style: GoogleFonts.ibmPlexSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.texteLabel)),
+                  const SizedBox(height: 6),
+                  Material(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(11),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(11),
+                      onTap: _choisirMarque,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 13),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: AppColors.bordureInput, width: 1.5),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Row(children: [
+                          Expanded(
+                            child: Text(_marque ?? 'Choisir une marque',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.ibmPlexSans(
+                                    fontSize: 13.5,
+                                    color: _marque == null
+                                        ? AppColors.texteLeger
+                                        : AppColors.texte)),
+                          ),
+                          const Icon(Icons.keyboard_arrow_down,
+                              size: 18, color: AppColors.texteLeger),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Modele : champ de saisie libre
             Expanded(
                 child: ChampSocadel(
-                    label: 'Marque (optionnel)',
-                    placeholder: 'Ex : HEXING',
-                    controleur: _marque)),
-            const SizedBox(width: 12),
-            Expanded(
-                child: _Liste(
                     label: 'Modèle',
-                    valeur: _modele,
-                    options: _modeles,
-                    placeholder: 'Choisir un modèle',
-                    onChange: (v) => setState(() => _modele = v))),
+                    placeholder: 'Ex : 0142',
+                    controleur: _modele,
+                    mono: true)),
           ]),
           const SizedBox(height: 14),
           _Liste(

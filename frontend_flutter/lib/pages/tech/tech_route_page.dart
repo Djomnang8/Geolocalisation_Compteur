@@ -40,6 +40,7 @@ class _TechRoutePageState extends State<TechRoutePage> {
   bool _positionReelle = false;
   List<_Arret> _arrets = const [];
   _Arret? _selection; // arret dont le chemin est trace sur la carte
+  int _page = 0; // pagination de la liste des arrets
   bool _chargement = true;
   String? _erreur;
 
@@ -433,14 +434,19 @@ class _TechRoutePageState extends State<TechRoutePage> {
                   const EncadreVide(
                       texte: 'Aucun compteur attribué pour le moment.\n'
                           "L'itinéraire se construira après les attributions."),
-                ..._arrets.map((arret) => Padding(
-                      padding: const EdgeInsets.only(bottom: 9),
-                      child: _CarteArret(
-                        arret: arret,
-                        selectionne: _selection == arret,
-                        onTap: () => _ouvrirArret(arret),
-                      ),
-                    )),
+                ...PaginationSocadel.tranche(_arrets, _page)
+                    .map((arret) => Padding(
+                          padding: const EdgeInsets.only(bottom: 9),
+                          child: _CarteArret(
+                            arret: arret,
+                            selectionne: _selection == arret,
+                            onTap: () => _ouvrirArret(arret),
+                          ),
+                        )),
+                PaginationSocadel(
+                    total: _arrets.length,
+                    page: _page,
+                    onChange: (p) => setState(() => _page = p)),
               ],
             ),
           ),

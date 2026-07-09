@@ -17,6 +17,7 @@ class AdminZonesPage extends StatefulWidget {
 
 class _AdminZonesPageState extends State<AdminZonesPage> {
   List<Map<String, dynamic>> _zones = const [];
+  int _page = 0; // pagination (10 zones par page)
   bool _chargement = true;
   String? _erreur;
 
@@ -236,7 +237,7 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                 ],
                 if (_zones.isEmpty && _erreur == null)
                   const EncadreVide(texte: 'Aucune zone enregistrée.'),
-                ..._zones.map((z) {
+                ...PaginationSocadel.tranche(_zones, _page).map((z) {
                   final couleur = _couleur(z['couleur'] as String?);
                   final couverture = (z['couverture'] as num?)?.toInt() ?? 0;
                   return Padding(
@@ -313,6 +314,10 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                     ),
                   );
                 }),
+                PaginationSocadel(
+                    total: _zones.length,
+                    page: _page,
+                    onChange: (p) => setState(() => _page = p)),
                 const SizedBox(height: 6),
                 // Bouton pointille "Tracer une nouvelle zone"
                 SizedBox(

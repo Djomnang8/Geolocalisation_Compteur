@@ -28,6 +28,8 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late final _nom =
       TextEditingController(text: Session.instance.utilisateur?.nom ?? '');
+  late final _telephone = TextEditingController(
+      text: Session.instance.utilisateur?.telephone ?? '');
   final _motDePasse = TextEditingController();
   bool _enregistrement = false;
 
@@ -41,6 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await AuthService.instance.modifierProfil(
         nom: nom,
+        telephone: _telephone.text.trim(),
         motDePasse:
             _motDePasse.text.trim().isEmpty ? null : _motDePasse.text.trim(),
       );
@@ -99,6 +102,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.texte)),
         const SizedBox(height: 11),
         ChampSocadel(label: 'Nom complet', controleur: _nom),
+        const SizedBox(height: 14),
+        ChampSocadel(
+          label: 'Numéro de téléphone',
+          controleur: _telephone,
+          placeholder: 'Ex : +237 6 99 12 34 56',
+          clavier: TextInputType.phone,
+          mono: true,
+        ),
         const SizedBox(height: 14),
         ChampSocadel(
           label: 'Nouveau mot de passe',

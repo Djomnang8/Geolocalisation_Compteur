@@ -28,6 +28,7 @@ class ApiConfig {
     '192.168.1.100', // exemple : Wi-Fi maison
     '192.168.43.1',  // exemple : partage de connexion telephone
     '10.20.2.84',
+    '10.20.0.251',
   ];
 
   /// Adresse retenue apres detection (memorisee jusqu'au prochain echec).

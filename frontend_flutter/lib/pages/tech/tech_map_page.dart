@@ -27,6 +27,7 @@ class _TechMapPageState extends State<TechMapPage> {
   final _recherche = TextEditingController();
   List<Compteur> _tous = const [];
   String _filtre = 'TOUS';
+  int _page = 0; // pagination de la liste sous la carte
   bool _chargement = true;
   String? _erreur;
 
@@ -81,7 +82,7 @@ class _TechMapPageState extends State<TechMapPage> {
           child: Column(children: [
             TextField(
               controller: _recherche,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _page = 0),
               style: GoogleFonts.ibmPlexSans(fontSize: 13.5, color: AppColors.texte),
               decoration: decorationSocadel('Rechercher par n° ou adresse').copyWith(
                 prefixIcon:
@@ -100,7 +101,10 @@ class _TechMapPageState extends State<TechMapPage> {
                       nombre: _tous.length,
                       active: _filtre == 'TOUS',
                       couleur: AppColors.primaire,
-                      onTap: () => setState(() => _filtre = 'TOUS')),
+                      onTap: () => setState(() {
+                            _filtre = 'TOUS';
+                            _page = 0;
+                          })),
                   for (final meta in StatutMeta.liste) ...[
                     const SizedBox(width: 7),
                     PuceFiltre(
@@ -108,7 +112,10 @@ class _TechMapPageState extends State<TechMapPage> {
                         nombre: _tous.where((c) => c.statut == meta.code).length,
                         active: _filtre == meta.code,
                         couleur: meta.couleur,
-                        onTap: () => setState(() => _filtre = meta.code)),
+                        onTap: () => setState(() {
+                              _filtre = meta.code;
+                              _page = 0;
+                            })),
                   ],
                 ],
               ),
@@ -147,10 +154,16 @@ class _TechMapPageState extends State<TechMapPage> {
                               fontWeight: FontWeight.w600,
                               color: AppColors.texteLeger)),
                       const SizedBox(height: 10),
-                      ...affiches.map((c) => Padding(
-                            padding: const EdgeInsets.only(bottom: 9),
-                            child: CarteCompteur(compteur: c, onTap: () => _ouvrir(c)),
-                          )),
+                      ...PaginationSocadel.tranche(affiches, _page)
+                          .map((c) => Padding(
+                                padding: const EdgeInsets.only(bottom: 9),
+                                child: CarteCompteur(
+                                    compteur: c, onTap: () => _ouvrir(c)),
+                              )),
+                      PaginationSocadel(
+                          total: affiches.length,
+                          page: _page,
+                          onChange: (p) => setState(() => _page = p)),
                     ],
                   ),
                 ),
