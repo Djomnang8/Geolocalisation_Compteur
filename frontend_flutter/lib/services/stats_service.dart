@@ -23,6 +23,19 @@ class StatsService {
       }) as Map)
           .cast<String, dynamic>();
 
+  /// Modification d'une zone de service (nom, couleur, couverture).
+  Future<Map<String, dynamic>> modifierZone(int id,
+          {required String nom, required String couleur, int couverture = 0}) async =>
+      (await ApiClient.instance.put('/zones/$id', {
+        'nom': nom,
+        'couleur': couleur,
+        'couverture': couverture,
+      }) as Map)
+          .cast<String, dynamic>();
+
+  /// Suppression d'une zone de service (les compteurs repassent « sans zone »).
+  Future<void> supprimerZone(int id) => ApiClient.instance.delete('/zones/$id');
+
   /// Suivi des deplacements des techniciens (page administrateur).
   Future<List<Map<String, dynamic>>> suivi() async =>
       (await ApiClient.instance.get('/suivi') as List).cast<Map<String, dynamic>>();

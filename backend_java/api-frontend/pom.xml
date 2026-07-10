@@ -27,10 +27,20 @@
   </dependencies>
 
   <build>
+    <!-- Nom de jar previsible, repris tel quel par le Dockerfile -->
+    <finalName>api-frontend</finalName>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <!-- Cree le jar executable (fat jar) pour « java -jar » en conteneur -->
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

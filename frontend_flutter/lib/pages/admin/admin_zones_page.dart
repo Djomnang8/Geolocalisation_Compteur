@@ -6,8 +6,9 @@ import '../../services/stats_service.dart';
 import '../../widgets/soc_widgets.dart';
 
 /// Zones de service (maquette "ADMIN ZONES") : bandeau cartographique,
-/// liste des zones (compteurs, interventions, pannes, couverture) et
-/// bouton « Tracer une nouvelle zone ».
+/// barre de recherche, liste des zones (compteurs, interventions, pannes,
+/// couverture) avec modification et suppression, et bouton « Tracer une
+/// nouvelle zone ».
 class AdminZonesPage extends StatefulWidget {
   const AdminZonesPage({super.key});
 
@@ -16,6 +17,7 @@ class AdminZonesPage extends StatefulWidget {
 }
 
 class _AdminZonesPageState extends State<AdminZonesPage> {
+  final _recherche = TextEditingController();
   List<Map<String, dynamic>> _zones = const [];
   int _page = 0; // pagination (10 zones par page)
   bool _chargement = true;
@@ -45,24 +47,41 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
     }
   }
 
+  /// Zones filtrees par la barre de recherche (nom de zone).
+  List<Map<String, dynamic>> get _filtres {
+    final q = _recherche.text.trim().toLowerCase();
+    if (q.isEmpty) return _zones;
+    return _zones
+        .where((z) => '${z['nom']}'.toLowerCase().contains(q))
+        .toList();
+  }
+
   Color _couleur(String? hexadecimal) {
     final brut = (hexadecimal ?? '#15357a').replaceFirst('#', '');
     return Color(int.parse('FF$brut', radix: 16));
   }
 
-  /// Dialogue « Tracer une nouvelle zone » : nom + couleur + couverture.
-  Future<void> _nouvelleZone() async {
-    final nom = TextEditingController();
-    final couverture = TextEditingController(text: '0');
-    var couleur = _palette.first;
-    final creer = await showDialog<bool>(
+  /// Dialogue de zone, partage entre creation (existante == null) et
+  /// modification (existante != null) : nom + couleur + couverture.
+  Future<void> _dialogueZone({Map<String, dynamic>? existante}) async {
+    final edition = existante != null;
+    final nom = TextEditingController(text: edition ? '${existante['nom']}' : '');
+    final couverture = TextEditingController(
+        text: edition ? '${existante['couverture'] ?? 0}' : '0');
+    var couleur = edition
+        ? '${existante['couleur'] ?? _palette.first}'
+        : _palette.first;
+    // La palette inclut la couleur actuelle de la zone meme si elle en sort.
+    final palette = {couleur, ..._palette}.toList();
+
+    final valider = await showDialog<bool>(
       context: context,
       builder: (contexteDialogue) => StatefulBuilder(
         builder: (context, setStateDialogue) => AlertDialog(
           backgroundColor: AppColors.fond,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Text('Tracer une nouvelle zone',
+          title: Text(edition ? 'Modifier la zone' : 'Tracer une nouvelle zone',
               style: GoogleFonts.ibmPlexSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -77,7 +96,7 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                   placeholder: 'Ex. : Bonabéri'),
               const SizedBox(height: 13),
               ChampSocadel(
-                  label: 'Couverture initiale (%)',
+                  label: 'Couverture (%)',
                   controleur: couverture,
                   clavier: TextInputType.number),
               const SizedBox(height: 13),
@@ -91,7 +110,7 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                 spacing: 9,
                 runSpacing: 9,
                 children: [
-                  for (final teinte in _palette)
+                  for (final teinte in palette)
                     GestureDetector(
                       onTap: () => setStateDialogue(() => couleur = teinte),
                       child: Container(
@@ -132,7 +151,7 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              child: Text('Créer la zone',
+              child: Text(edition ? 'Enregistrer' : 'Créer la zone',
                   style: GoogleFonts.ibmPlexSans(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
@@ -142,15 +161,67 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
         ),
       ),
     );
-    if (creer != true || !mounted) return;
+    if (valider != true || !mounted) return;
     try {
-      await StatsService.instance.creerZone(
-        nom: nom.text.trim(),
-        couleur: couleur,
-        couverture: int.tryParse(couverture.text.trim()) ?? 0,
-      );
+      final couvertureNum = int.tryParse(couverture.text.trim()) ?? 0;
+      if (edition) {
+        await StatsService.instance.modifierZone(
+          (existante['id'] as num).toInt(),
+          nom: nom.text.trim(),
+          couleur: couleur,
+          couverture: couvertureNum,
+        );
+      } else {
+        await StatsService.instance.creerZone(
+          nom: nom.text.trim(),
+          couleur: couleur,
+          couverture: couvertureNum,
+        );
+      }
       if (!mounted) return;
-      afficherToast(context, 'Zone « ${nom.text.trim()} » créée');
+      afficherToast(context,
+          edition ? 'Zone « ${nom.text.trim()} » modifiée' : 'Zone « ${nom.text.trim()} » créée');
+      await _charger();
+    } catch (e) {
+      if (mounted) afficherErreur(context, e);
+    }
+  }
+
+  /// Confirmation puis suppression d'une zone.
+  Future<void> _supprimer(Map<String, dynamic> zone) async {
+    final compteurs = (zone['compteurs'] as num?)?.toInt() ?? 0;
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (contexteDialogue) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Supprimer la zone ?',
+            style: GoogleFonts.ibmPlexSans(
+                fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.texte)),
+        content: Text(
+            compteurs == 0
+                ? 'La zone « ${zone['nom']} » sera définitivement supprimée.'
+                : 'La zone « ${zone['nom']} » sera supprimée. Ses $compteurs compteur(s) '
+                    'ne seront pas supprimés : ils repasseront « sans zone ».',
+            style: GoogleFonts.ibmPlexSans(
+                fontSize: 13, color: AppColors.texteSecondaire, height: 1.5)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(contexteDialogue).pop(false),
+              child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.of(contexteDialogue).pop(true),
+            child: Text('Supprimer',
+                style: GoogleFonts.ibmPlexSans(
+                    fontWeight: FontWeight.w600, color: AppColors.rougeSombre)),
+          ),
+        ],
+      ),
+    );
+    if (confirme != true || !mounted) return;
+    try {
+      await StatsService.instance.supprimerZone((zone['id'] as num).toInt());
+      if (!mounted) return;
+      afficherToast(context, 'Zone « ${zone['nom']} » supprimée');
       await _charger();
     } catch (e) {
       if (mounted) afficherErreur(context, e);
@@ -230,14 +301,39 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                             fontSize: 11.5, color: AppColors.texteLeger)),
                   ],
                 ),
+                const SizedBox(height: 12),
+                // Barre de recherche par nom de zone
+                TextField(
+                  controller: _recherche,
+                  onChanged: (_) => setState(() => _page = 0),
+                  style: GoogleFonts.ibmPlexSans(
+                      fontSize: 13.5, color: AppColors.texte),
+                  decoration: decorationSocadel('Rechercher une zone…').copyWith(
+                    prefixIcon: const Icon(Icons.search,
+                        size: 18, color: AppColors.texteLeger),
+                    suffixIcon: _recherche.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.close,
+                                size: 16, color: AppColors.texteLeger),
+                            onPressed: () {
+                              _recherche.clear();
+                              setState(() => _page = 0);
+                            },
+                          ),
+                  ),
+                ),
                 const SizedBox(height: 13),
                 if (_erreur != null) ...[
                   EncadreVide(texte: _erreur!),
                   const SizedBox(height: 10),
                 ],
-                if (_zones.isEmpty && _erreur == null)
-                  const EncadreVide(texte: 'Aucune zone enregistrée.'),
-                ...PaginationSocadel.tranche(_zones, _page).map((z) {
+                if (_filtres.isEmpty && _erreur == null)
+                  EncadreVide(
+                      texte: _recherche.text.isEmpty
+                          ? 'Aucune zone enregistrée.'
+                          : 'Aucune zone ne correspond à « ${_recherche.text.trim()} ».'),
+                ...PaginationSocadel.tranche(_filtres, _page).map((z) {
                   final couleur = _couleur(z['couleur'] as String?);
                   final couverture = (z['couverture'] as num?)?.toInt() ?? 0;
                   return Padding(
@@ -310,12 +406,58 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                             ),
                           ),
                         ]),
+                        const SizedBox(height: 11),
+                        // Actions : modifier / supprimer la zone
+                        Container(
+                          padding: const EdgeInsets.only(top: 11),
+                          decoration: const BoxDecoration(
+                              border: Border(
+                                  top: BorderSide(color: AppColors.separateur))),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: () => _dialogueZone(existante: z),
+                                icon: const Icon(Icons.edit_outlined,
+                                    size: 14, color: AppColors.primaire),
+                                label: Text('Modifier',
+                                    style: GoogleFonts.ibmPlexSans(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primaire)),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  side: const BorderSide(
+                                      color: AppColors.bordureInput),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              OutlinedButton(
+                                onPressed: () => _supprimer(z),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 9, vertical: 6),
+                                  side: const BorderSide(color: Color(0xFFF3C2C2)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Icon(Icons.delete_outline,
+                                    size: 15, color: AppColors.rougeSombre),
+                              ),
+                            ],
+                          ),
+                        ),
                       ]),
                     ),
                   );
                 }),
                 PaginationSocadel(
-                    total: _zones.length,
+                    total: _filtres.length,
                     page: _page,
                     onChange: (p) => setState(() => _page = p)),
                 const SizedBox(height: 6),
@@ -323,7 +465,7 @@ class _AdminZonesPageState extends State<AdminZonesPage> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: _nouvelleZone,
+                    onPressed: () => _dialogueZone(),
                     icon: const Icon(Icons.layers_outlined,
                         size: 18, color: AppColors.primaire),
                     label: Text('Tracer une nouvelle zone',

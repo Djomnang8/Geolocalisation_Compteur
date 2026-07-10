@@ -1,0 +1,9 @@
+# Fichiers inutiles a la construction des images (accelere le build)
+**/target/
+**/*.class
+.git/
+.idea/
+*.iml
+*.log
+demarrer_apis.bat
+EXPLICATION_DES_API.md

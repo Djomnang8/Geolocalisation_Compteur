@@ -3,8 +3,11 @@ package com.socadel.backend.controller;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,6 +58,43 @@ public class StatistiqueController {
                     (String) corps.get("couleur"),
                     couverture == null ? null : ((Number) couverture).intValue(),
                     auteur(req)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** Modification d'une zone de service (RBACL : administrateur uniquement). */
+    @PutMapping("/zones/{id}")
+    public ResponseEntity<?> modifierZone(@PathVariable Long id,
+                                          @RequestBody Map<String, Object> corps,
+                                          HttpServletRequest req) {
+        if (!"ADMIN".equals(req.getAttribute("role"))) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Accès réservé à l'administrateur (RBACL)."));
+        }
+        try {
+            Object couverture = corps.get("couverture");
+            return ResponseEntity.ok(statistiqueService.modifierZone(
+                    id,
+                    (String) corps.get("nom"),
+                    (String) corps.get("couleur"),
+                    couverture == null ? null : ((Number) couverture).intValue(),
+                    auteur(req)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /** Suppression d'une zone de service (RBACL : administrateur uniquement). */
+    @DeleteMapping("/zones/{id}")
+    public ResponseEntity<?> supprimerZone(@PathVariable Long id, HttpServletRequest req) {
+        if (!"ADMIN".equals(req.getAttribute("role"))) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("message", "Accès réservé à l'administrateur (RBACL)."));
+        }
+        try {
+            statistiqueService.supprimerZone(id, auteur(req));
+            return ResponseEntity.ok(Map.of("message", "Zone supprimée."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

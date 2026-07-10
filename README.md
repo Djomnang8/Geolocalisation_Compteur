@@ -82,6 +82,23 @@ avec `{"nom":"Alice NGONO","matricule":"ADM-1007","motDePasse":"1234"}`.
 > Le rôle détaillé de chaque API et de chacune de leurs classes est
 > expliqué en langage simple dans `backend_java/EXPLICATION_DES_API.md`.
 
+#### Option Docker (backend complet en une commande)
+
+Le backend peut aussi tourner **entièrement sur Docker** (les deux API + une
+base MySQL), sans installer Java, Maven ni XAMPP. Depuis `backend_java` :
+```bat
+docker compose up --build
+```
+Cela démarre trois conteneurs sur un réseau privé :
+- **mysql** : la base, avec import automatique de `database/socadel_geoloc.sql`
+  (exposée sur le port **3307** du PC pour ne pas gêner XAMPP) ;
+- **api-backend** : microservices métier, port 8081 **interne** (non publié) ;
+- **api-frontend** : passerelle BFF, **seule exposée** sur le port **8080**.
+
+Test : http://localhost:8080/api/auth/ping. Arrêt : `docker compose down`
+(ajouter `-v` pour réinitialiser la base). L'application mobile s'utilise
+exactement comme avant (elle appelle le port 8080).
+
 ### 3. Frontend Flutter
 ```bat
 cd frontend_flutter

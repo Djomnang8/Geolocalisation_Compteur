@@ -1,0 +1,80 @@
+# =============================================================================
+#  SOCADEL Geoloc - Backend complet sur Docker
+#  ---------------------------------------------------------------------------
+#  3 conteneurs sur un reseau prive :
+#    - mysql        : base de donnees (importe automatiquement socadel_geoloc.sql)
+#    - api-backend  : microservices metier (port interne 8081, NON publie)
+#    - api-frontend : passerelle BFF (port 8080, SEULE porte exposee)
+#
+#  Demarrage (depuis le dossier backend_java) :   docker compose up --build
+#  Arret :                                        docker compose down
+#  Reinitialiser la base :                        docker compose down -v
+#
+#  L'application mobile continue d'appeler http://IP_DU_PC:8080/api comme avant.
+# =============================================================================
+
+services:
+
+  # --- Base de donnees MySQL ------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: socadel-mysql
+    environment:
+      # Compte root sans mot de passe (comme XAMPP, pour rester simple en TP)
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: socadel_geoloc
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      # 3307 cote PC pour ne pas entrer en conflit avec XAMPP (3306)
+      - "3307:3306"
+    volumes:
+      # Import automatique du schema + donnees au premier demarrage
+      - ./database/socadel_geoloc.sql:/docker-entrypoint-initdb.d/01-socadel_geoloc.sql:ro
+      # Persistance des donnees entre les redemarrages
+      - socadel_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # --- API Backend : microservices metier (interne) -------------------------
+  api-backend:
+    build:
+      context: .
+      dockerfile: api-backend/Dockerfile
+    container_name: socadel-api-backend
+    environment:
+      # Connexion vers le conteneur MySQL (nom de service « mysql »)
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/socadel_geoloc?useSSL=false&serverTimezone=Africa/Douala&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: ""
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # Port 8081 expose au reseau prive uniquement, jamais publie vers le PC :
+    # l'API Backend n'est joignable que par l'API Frontend.
+    expose:
+      - "8081"
+    restart: on-failure
+
+  # --- API Frontend : passerelle BFF (seule exposee) ------------------------
+  api-frontend:
+    build:
+      context: .
+      dockerfile: api-frontend/Dockerfile
+    container_name: socadel-api-frontend
+    environment:
+      # Adresse interne de l'API Backend sur le reseau Docker
+      APP_BACKEND_URL: "http://api-backend:8081"
+    depends_on:
+      - api-backend
+    ports:
+      # Seule porte d'entree accessible depuis le PC et le telephone
+      - "8080:8080"
+    restart: on-failure
+
+volumes:
+  socadel_mysql:

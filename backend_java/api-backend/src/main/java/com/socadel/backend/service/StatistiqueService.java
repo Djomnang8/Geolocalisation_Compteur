@@ -75,6 +75,7 @@ public class StatistiqueService {
                     .filter(r -> r.getCompteur().getZone() != null
                             && z.getNom().equals(r.getCompteur().getZone().getNom())).count();
             Map<String, Object> ligne = new LinkedHashMap<>();
+            ligne.put("id", z.getId());
             ligne.put("nom", z.getNom());
             ligne.put("couleur", z.getCouleur());
             ligne.put("compteurs", nb);
@@ -126,6 +127,57 @@ public class StatistiqueService {
         z.setCouverture(couverture == null ? 0 : Math.max(0, Math.min(100, couverture)));
         zoneRepo.save(z);
         auditService.tracer(auteur, "Création de la zone « " + z.getNom() + " »");
+        return ligneZone(z);
+    }
+
+    /** Modification d'une zone de service (nom, couleur, couverture). */
+    @Transactional
+    public Map<String, Object> modifierZone(Long id, String nom, String couleur,
+                                            Integer couverture, String auteur) {
+        Zone z = zoneRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Zone introuvable."));
+        if (nom != null && !nom.isBlank()) {
+            // Unicite : aucune autre zone ne doit deja porter ce nom
+            zoneRepo.findByNomIgnoreCase(nom.trim())
+                    .filter(autre -> !autre.getId().equals(id))
+                    .ifPresent(autre -> {
+                        throw new IllegalArgumentException("Une autre zone porte déjà ce nom.");
+                    });
+            z.setNom(nom.trim());
+        }
+        if (couleur != null && !couleur.isBlank()) {
+            z.setCouleur(couleur.trim());
+        }
+        if (couverture != null) {
+            z.setCouverture(Math.max(0, Math.min(100, couverture)));
+        }
+        zoneRepo.save(z);
+        auditService.tracer(auteur, "Modification de la zone « " + z.getNom() + " »");
+        return ligneZone(z);
+    }
+
+    /**
+     * Suppression d'une zone de service. Les compteurs qui y etaient rattaches
+     * ne sont pas supprimes : ils repassent simplement « sans zone ».
+     */
+    @Transactional
+    public void supprimerZone(Long id, String auteur) {
+        Zone z = zoneRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Zone introuvable."));
+        List<Compteur> rattaches = compteurRepo.findAll().stream()
+                .filter(c -> c.getZone() != null && c.getZone().getId().equals(id))
+                .toList();
+        for (Compteur c : rattaches) {
+            c.setZone(null);
+            compteurRepo.save(c);
+        }
+        zoneRepo.delete(z);
+        auditService.tracer(auteur, "Suppression de la zone « " + z.getNom() + " » ("
+                + rattaches.size() + " compteur(s) détaché(s))");
+    }
+
+    /** Mise en forme d'une zone pour l'API. */
+    private Map<String, Object> ligneZone(Zone z) {
         Map<String, Object> ligne = new LinkedHashMap<>();
         ligne.put("id", z.getId());
         ligne.put("nom", z.getNom());
